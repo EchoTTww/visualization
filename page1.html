@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="">
+    <title>line-race</title>
+
+    <link href="css/main.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="css/dashboard.css" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <nav id="sidebarMenu" class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+            <div class="position-sticky pt-3 sidebar-sticky">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="javascript:void(0)" id = "data1" onclick="data1()">
+                            <span data-feather="home" class="align-text-bottom"></span>
+                            人口总数
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)" id = "data2" onclick="data2()">
+                            <span data-feather="file" class="align-text-bottom"></span>
+                            人均温室气体排放量
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)" id = "data3" onclick="data3()">
+                            <span data-feather="shopping-cart" class="align-text-bottom"></span>
+                            人均二氧化碳排放量
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)" id = "data4" onclick="data4()">
+                            <span data-feather="shopping-cart" class="align-text-bottom"></span>
+                            森林面积占比
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="javascript:void(0)" id = "data5" onclick="data5()">
+                            <span data-feather="shopping-cart" class="align-text-bottom"></span>
+                            可再生能源消耗占比
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2" id = "topic">人口总数</h1>
+
+            </div>
+
+            <div id="container" style="height: 800px"></div>
+
+            <script type="text/javascript" src="https://fastly.jsdelivr.net/npm/jquery"></script>
+            <script type="text/javascript"
+                    src="https://fastly.jsdelivr.net/npm/echarts@5.4.0/dist/echarts.min.js"></script>
+
+            <script type="text/javascript">
+                var dom = document.getElementById('container');
+                var myChart = echarts.init(dom, null, {
+                    renderer: 'canvas',
+                    useDirtyRect: false
+                });
+                var app = {};
+                var option;
+                var datapath = './data/人口总数.json'
+                $.get(
+                    datapath,
+                    function (_rawData) {
+                        run(_rawData);
+                    }
+                );
+
+                function run(_rawData) {
+                    const countries = [
+                        '澳大利亚',
+                        '加拿大',
+                        '中国',
+                        '法国',
+                        '英国',
+                        '印度',
+                        '日本',
+                        '韩国',
+                        '俄罗斯',
+                        '美国',
+                        '世界',
+                    ];
+                    let datasetWithFilters = [];
+                    let seriesList = [];
+                    echarts.util.each(countries,
+                        function (country) {
+                            var datasetId = 'dataset_' + country;
+                            datasetWithFilters.push({
+                                id: datasetId,
+                                fromDatasetId: 'dataset_raw',
+                                transform: {
+                                    type: 'filter',
+                                    config: {
+                                        and: [
+                                            {dimension: 'Year', gte: 1950},
+                                            {dimension: 'Country', '=': country}
+                                        ]
+                                    }
+                                }
+                            });
+                            seriesList.push({
+                                type: 'line',
+                                datasetId: datasetId,
+                                showSymbol: false,
+                                name: country,
+                                endLabel: {
+                                    show: true,
+                                    formatter: function (params) {
+                                        return params.value[1] + ': ' + params.value[0];
+                                    }
+                                },
+                                labelLayout: {
+                                    moveOverlap: 'shiftY'
+                                },
+                                emphasis: {
+                                    focus: 'series'
+                                },
+                                encode: {
+                                    x: 'Year',
+                                    y: 'Data',
+                                    label: ['Country', 'Data'],
+                                    itemName: 'Year',
+                                    tooltip: ['Data']
+                                }
+                            });
+                        });
+                    option = {
+                        animationDuration: 10,
+                        dataset: [
+                            {
+                                id: 'dataset_raw',
+                                source: _rawData
+                            },
+                            ...datasetWithFilters
+                        ],
+                        tooltip: {
+                            order: 'valueDesc',
+                            trigger: 'axis'
+                        },
+                        xAxis: {
+                            type: 'category',
+                            nameLocation: 'middle'
+                        },
+                        yAxis: {
+                            name: 'Data'
+                        },
+                        grid: {
+                            right: 140
+                        },
+                        dataZoom: [
+                            {
+                                type: 'slider',
+                                start: 0,
+                                end: 100,
+                                xAxisIndex: 0
+                            },
+                            {
+                                type: 'inside',
+                                start: 0,
+                                end: 100,
+                                xAxisIndex: 0
+                            },
+                            {
+                                type: 'slider',
+                                start: 0,
+                                end: 100,
+                                yAxisIndex: 0,
+                                left: '2%'
+                            },
+                            {
+                                type: 'inside',
+                                start: 0,
+                                end: 100,
+                                yAxisIndex: 0
+                            }
+                        ],
+                        series: seriesList
+                    };
+                    myChart.setOption(option);
+                }
+
+                if (option && typeof option === 'object') {
+                    myChart.setOption(option);
+                }
+
+                window.addEventListener('resize', myChart.resize);
+            </script>
+            <script>
+                function data1() {
+                    datapath = './data/人口总数.json'
+                    $.get(
+                        datapath,
+                        function (_rawdata) {
+                            run(_rawdata);
+                        }
+                    );
+                    document.getElementsByClassName("nav-link active")[0].className = "nav-link"
+                    document.getElementById("data1").className = "nav-link active"
+                    document.getElementById("topic").innerText = "人口总数"
+                }
+                function data2() {
+                    datapath = './data/人均温室气体排放总量.json'
+                    $.get(
+                        datapath,
+                        function (_rawdata) {
+                            run(_rawdata);
+                        }
+                    );
+                    document.getElementsByClassName("nav-link active")[0].className = "nav-link"
+                    document.getElementById("data2").className = "nav-link active"
+                    document.getElementById("topic").innerText = "人均温室气体排放量(吨二氧化碳当量/人)"
+                }
+                function data3() {
+                    datapath = './data/二氧化碳人均排放.json'
+                    $.get(
+                        datapath,
+                        function (_rawdata) {
+                            run(_rawdata);
+                        }
+                    );
+                    document.getElementsByClassName("nav-link active")[0].className = "nav-link"
+                    document.getElementById("data3").className = "nav-link active"
+                    document.getElementById("topic").innerText = "人均二氧化碳排放量(吨二氧化碳当量/人)"
+                }
+                function data4() {
+                    datapath = './data/森林面积占比.json'
+                    $.get(
+                        datapath,
+                        function (_rawdata) {
+                            run(_rawdata);
+                        }
+                    );
+                    document.getElementsByClassName("nav-link active")[0].className = "nav-link"
+                    document.getElementById("data4").className = "nav-link active"
+                    document.getElementById("topic").innerText = "森林面积占国土比值(%)"
+                }
+                function data5() {
+                    datapath = './data/可再生能源消耗.json'
+                    $.get(
+                        datapath,
+                        function (_rawdata) {
+                            run(_rawdata);
+                        }
+                    );
+                    document.getElementsByClassName("nav-link active")[0].className = "nav-link"
+                    document.getElementById("data5").className = "nav-link active"
+                    document.getElementById("topic").innerText = "可再生能源消耗占能源消耗总量比值(%)"
+                }
+            </script>
+
+        </main>
+    </div>
+</div>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
